@@ -1,0 +1,44 @@
+{
+  "name": "ecowetrics",
+  "version": "1.0.0",
+  "description": "a way to evaluate if an activity is contributing to more sustainable systems of production and consumption (for the web)",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "measures": "npm run lhci ; npm run greenit ; npm run ylt",
+    "lhci": "npx lhci autorun --config=src/lighthouserc.js",
+    "greenit": "node ./src/greenit.js",
+    "ylt": "node ./src/ylt.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Paulmicha/ecowetrics.git"
+  },
+  "keywords": [
+    "test",
+    "greenit",
+    "performance",
+    "ecometrics"
+  ],
+  "author": "Paul Michalet",
+  "license": "AGPL-3.0",
+  "bugs": {
+    "url": "https://github.com/Paulmicha/ecowetrics/issues"
+  },
+  "homepage": "https://github.com/Paulmicha/ecowetrics#readme",
+  "dependencies": {
+    "@lhci/cli": "^0.8.2",
+    "axios": "^0.21.1",
+    "concat-files": "^0.1.1",
+    "exceljs": "^4.2.0",
+    "glob": "^7.1.6",
+    "progress": "^2.0.3",
+    "puppeteer": "^5.5.0",
+    "puppeteer-har": "^1.1.2",
+    "sitemapper": "^3.1.12",
+    "thymeleaf": "^0.20.5",
+    "yaml": "^1.10.2",
+    "yargs": "^16.2.0",
+    "yellowlabtools": "^2.1.0"
+  }
+}

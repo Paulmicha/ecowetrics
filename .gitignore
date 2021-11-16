@@ -1,0 +1,8 @@
+node_modules/
+.vscode
+/output/
+/settings.yaml
+/.env
+
+# TODO wip
+/Dockerfile
