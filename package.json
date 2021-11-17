@@ -6,9 +6,9 @@
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
     "measures": "npm run lhci ; npm run greenit ; npm run ylt",
-    "lhci": "npx lhci autorun --config=src/lighthouserc.js",
-    "greenit": "node ./src/greenit.js",
-    "ylt": "node ./src/ylt.js"
+    "lhci": "node ./src/preprocess.js && npx lhci autorun --config=./src/lighthouserc.js",
+    "greenit": "node ./src/preprocess.js && node ./src/greenit.js",
+    "ylt": "node ./src/preprocess.js && node ./src/ylt.js"
   },
   "repository": {
     "type": "git",
@@ -31,9 +31,11 @@
     "axios": "^0.21.1",
     "concat-files": "^0.1.1",
     "exceljs": "^4.2.0",
+    "filenamify": "^4.3.0",
     "glob": "^7.1.6",
+    "mkdirp": "^1.0.4",
     "progress": "^2.0.3",
-    "puppeteer": "^5.5.0",
+    "puppeteer": "^11.0.0",
     "puppeteer-har": "^1.1.2",
     "sitemapper": "^3.1.12",
     "thymeleaf": "^0.20.5",

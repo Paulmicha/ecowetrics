@@ -7,7 +7,7 @@
  * See https://github.com/buildkite/docker-puppeteer/blob/master/example/integration-tests/index.test.js
  */
 
-const currentDate = new Date();
+const { setting } = require('./settings.js');
 
 module.exports = {
   ci: {
@@ -16,21 +16,7 @@ module.exports = {
       // See https://github.com/GoogleChrome/lighthouse-ci/blob/main/docs/configuration.md#puppeteerlaunchoptions
       puppeteerScript: './src/lighthousePuppeteerScript.js',
       puppeteerLaunchOptions: {
-        // args: [
-        //   '--no-sandbox',
-        //   '--disable-setuid-sandbox',
-        //   '--disable-dev-shm-usage'
-        // ]
-        args: [
-          '--allow-no-sandbox-job',
-          '--allow-sandbox-debugging',
-          '--no-sandbox',
-          '--disable-gpu',
-          '--disable-gpu-sandbox',
-          '--disable-setuid-sandbox',
-          '--disable-dev-shm-usage',
-          '--display'
-        ]
+        args: setting('puppeteerLaunchOptionsArgs').split(' ')
       },
       numberOfRuns: 1,
       disableStorageReset: true,
@@ -42,34 +28,14 @@ module.exports = {
         // Use applied throttling instead of simulated throttling.
         "throttlingMethod": "devtools"
       },
-
-      // TODO wip refactor in progress
-      url: [
-        // 'http://node:3000/'
-      ]
+      url: setting('urls')
     },
     // HTML + Json output.
     upload: {
       target: 'filesystem',
-      outputDir: `/output/${currentDate.getFullYear()}/${currentDate.getMonth() + 1}/${currentDate.getDate()}`,
-      reportFilenamePattern: '%%PATHNAME%%-%%DATETIME%%-report.%%EXTENSION%%'
-    },
-    // Switch to server store. It allows for diffs, unlike Html + Json outputs.
-    // TODO cannot have distinct runs with the same Git commit hash ?
-    // upload: {
-    //   target: 'lhci',
-    //   token: process.env.BUILD_TOKEN,
-    //   ignoreDuplicateBuildFailure: true,
-    //   serverBaseUrl: process.env.SERVER_URL || 'http://lighthouse:9001/'
-    // },
-    // TODO read from YAML settings.
-    assert: {
-      "assertions": {
-        "categories:performance": ["error", { "minScore": .1 }],
-        "categories:accessibility": ["error", { "minScore": .3 }],
-        "categories:best-practices": ["error", { "minScore": .3 }],
-        "categories:seo": ["error", { "minScore": .1 }]
-      }
-    },
-  },
+      outputDir: setting('outputPath'),
+      reportFilenamePattern: setting('outputFilenamesPrefix') +
+        '-%%PATHNAME%%-lhci-report.%%EXTENSION%%'
+    }
+  }
 };

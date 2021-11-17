@@ -7,9 +7,9 @@
  */
 
 const puppeteer = require('puppeteer');
-const createJsonReports = require('./greenit/cli-core/analysis.js.js').createJsonReports;
-const create_global_report = require('./greenit/cli-core/reportGlobal.js.js').create_global_report;
-const create_html_report = require('./greenit/cli-core/reportHtml.js.js').create_html_report;
+const createJsonReports = require('./greenit/cli-core/analysis.js').createJsonReports;
+const create_global_report = require('./greenit/cli-core/reportGlobal.js').create_global_report;
+const create_html_report = require('./greenit/cli-core/reportHtml.js').create_html_report;
 
 /**
  * Command entry point.
