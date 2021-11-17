@@ -106,4 +106,4 @@ async function ensureLogin(page) {
   }
 }
 
-module.exports = { ensureLogin };
+module.exports = { ensureLogin, hasLoggedIn };

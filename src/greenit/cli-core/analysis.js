@@ -79,8 +79,8 @@ async function analyseURL(browser, pageInformations, options) {
             if (pageInformations?.screenshot || setting('screenshot')) {
                 await takeScreenshot(
                     page,
-                    setting('outputPathPrefixed') + '-screenshot-' +
-                        setting('device') + '-' +
+                    setting('outputPathPrefixed') + '-greenit-' +
+                        setting('device') + '-screenshot-' +
                         filenamify(pageInformations.name) + '.png'
                 );
             }
@@ -212,7 +212,8 @@ async function takeScreenshot(page, screenshotPath) {
         fs.unlinkSync(screenshotPath);
     }
     // take screenshot
-    await page.screenshot({ path: screenshotPath, fullPage: true });
+    // await page.screenshot({ path: screenshotPath, fullPage: true });
+    await page.screenshot({ path: screenshotPath });
 }
 
 //handle login

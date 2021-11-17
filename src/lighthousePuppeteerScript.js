@@ -2,9 +2,6 @@
  * @file
  * Contains puppeteer customizations for lighthouse.
  *
- * TODO no way to run actions per page before the tests ?
- * @see puppeteerBeforeHook() in src/puppeteer/hooks.js
- *
  * See https://dzone.com/articles/lighthouse-ci-with-puppeteer
  * See https://www.puppeteersharp.com/api/PuppeteerSharp.LaunchOptions.html
  * See https://github.com/buildkite/docker-puppeteer/blob/master/example/integration-tests/index.test.js
@@ -33,6 +30,16 @@ async function setup(browser, context) {
   if (setting('login')) {
     await ensureLogin(page);
   }
+
+  // TODO no way to run actions per page before the tests ?
+  // @see puppeteerBeforeHook() in src/puppeteer/hooks.js
+  // TODO apparently context is not writeable here, so this can't work ? (Use
+  // page name in report file name).
+  // const input = setting('urlsConfByUrl')[context.url];
+  // if (input?.name) {
+  //   context.options.reportFilenamePattern = setting('outputFilenamesPrefix') +
+  //     `-lhci-${setting('device')}-${input.name}-report.%%EXTENSION%%`;
+  // }
 
   await page.close();
 }
