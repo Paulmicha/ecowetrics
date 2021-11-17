@@ -1,12 +1,17 @@
 const PuppeteerHar = require('puppeteer-har');
 const fs = require('fs')
 const path = require('path');
-const ProgressBar = require('progress');
+// const ProgressBar = require('progress');
+const filenamify = require('filenamify');
 const sizes = require('../sizes.js');
-const translator = require('./translator.js').translator;
+const { translator } = require('./translator.js');
+const { setting } = require('../../settings.js');
+const { ensureLogin } = require('../../puppeteer/login.js');
+const { puppeteerBeforeHook } = require('../../puppeteer/hooks.js');
 
 //Path to the url file
-const SUBRESULTS_DIRECTORY = path.join(__dirname,'../results');
+// const SUBRESULTS_DIRECTORY = path.join(__dirname,'../results');
+const SUBRESULTS_DIRECTORY = setting('outputPathPrefixed');
 
 //Analyse a webpage
 async function analyseURL(browser, pageInformations, options) {
@@ -21,6 +26,13 @@ async function analyseURL(browser, pageInformations, options) {
     try {
         const page = await browser.newPage();
 
+        // TODO common puppeteer setup steps ?
+        // @see setup() in src/lighthousePuppeteerScript.js
+        await page.setCacheEnabled(true);
+        if (setting('login')) {
+          await ensureLogin(page);
+        }
+
         // configure proxy in page browser
         if (PROXY) {
             await page.authenticate({ username: PROXY.user, password: PROXY.password });
@@ -31,18 +43,27 @@ async function analyseURL(browser, pageInformations, options) {
             await page.setExtraHTTPHeaders(options.headers);
         }
 
+        // TODO single source of truth this for LightHouse as well.
         await page.setViewport(sizes[DEVICE]);
 
         // disabling cache
-        await page.setCacheEnabled(false);    
+        // await page.setCacheEnabled(false);
 
         //get har file
         const pptrHar = new PuppeteerHar(page);
         await pptrHar.start();
-        
+
         try {
             //go to url
-            await page.goto(pageInformations.url, {timeout : TIMEOUT});
+            await page.goto(pageInformations.url, {
+              timeout: TIMEOUT,
+              // waitUntil: 'networkidle2'
+              waitUntil: 'networkidle0'
+            });
+
+            // We reimplement this differently to share the same code with
+            // Lighthouse -> TODO [evol] deprecate / redo analyseURL() ?
+            await puppeteerBeforeHook(page, pageInformations);
 
             // waiting for page to load
             await waitPageLoading(page, pageInformations, TIMEOUT);
@@ -55,8 +76,13 @@ async function analyseURL(browser, pageInformations, options) {
 
         } finally {
             // Take screenshot (even if the page fails to load)
-            if (pageInformations.screenshot) {
-                await takeScreenshot(page, pageInformations.screenshot);
+            if (pageInformations?.screenshot || setting('screenshot')) {
+                await takeScreenshot(
+                    page,
+                    setting('outputPathPrefixed') + '-screenshot-' +
+                        setting('device') + '-' +
+                        filenamify(pageInformations.name) + '.png'
+                );
             }
         }
 
@@ -65,8 +91,8 @@ async function analyseURL(browser, pageInformations, options) {
         const client = await page.target().createCDPSession();
         let ressourceTree = await client.send('Page.getResourceTree');
         await client.detach()
-    
-        // replace chrome.i18n.getMessage call by i18n custom implementation working in page 
+
+        // replace chrome.i18n.getMessage call by i18n custom implementation working in page
         // fr is default catalog
         await page.evaluate(language_array =>(chrome = { "i18n" : {"getMessage" : function (message, parameters = []) {
             return language_array[message].replace(/%s/g, function() {
@@ -74,15 +100,15 @@ async function analyseURL(browser, pageInformations, options) {
                 return Array.isArray(parameters) ? parameters.shift() : parameters;
             });
         }}}), translator.getCatalog());
-        
+
         //add script, get run, then remove it to not interfere with the analysis
         let script = await page.addScriptTag({ path: path.join(__dirname,'../dist/bundle.js')});
         await script.evaluate(x=>(x.remove()));
-        
+
         //pass node object to browser
         await page.evaluate(x=>(har = x), harObj.log);
         await page.evaluate(x=>(resources = x), ressourceTree.frameTree.resources);
-    
+
         //launch analyse
         result = await page.evaluate(()=>(launchAnalyse()));
 
@@ -119,7 +145,7 @@ async function waitPageLoading(page, pageInformations, TIMEOUT){
 }
 
 function isValidWaitForNavigation(waitUntilParam) {
-    return waitUntilParam && 
+    return waitUntilParam &&
             ("load" === waitUntilParam ||
             "domcontentloaded" === waitUntilParam ||
             "networkidle0" === waitUntilParam ||
@@ -178,7 +204,7 @@ async function scrollToBottom(page){
 async function takeScreenshot(page, screenshotPath) {
     // create screenshot folder if not exists
     const folder = path.dirname(screenshotPath);
-    if (!fs.existsSync(folder)){
+    if (!fs.existsSync(folder)) {
         fs.mkdirSync(folder, { recursive: true });
     }
     // remove old screenshot
@@ -186,7 +212,7 @@ async function takeScreenshot(page, screenshotPath) {
         fs.unlinkSync(screenshotPath);
     }
     // take screenshot
-    await page.screenshot({path: screenshotPath});
+    await page.screenshot({ path: screenshotPath, fullPage: true });
 }
 
 //handle login
@@ -200,7 +226,7 @@ async function login(browser,loginInformations) {
     //complete fields
     for (let index = 0; index < loginInformations.fields.length; index++) {
         let field = loginInformations.fields[index]
-        await page.type(field.selector, field.value)  
+        await page.type(field.selector, field.value)
     }
     //click login button
     await page.click(loginInformations.loginButtonSelector);
@@ -220,18 +246,18 @@ async function createJsonReports(browser, pagesInformations, options, proxy, hea
     const DEVICE = options.device;
 
     //initialise progress bar
-    let progressBar;
-    if (!options.ci){
-        progressBar = new ProgressBar(' Analysing                [:bar] :percent     Remaining: :etas     Time: :elapseds', {
-            complete: '=',
-            incomplete: ' ',
-            width: 40,
-            total: pagesInformations.length+2
-        });
-        progressBar.tick();
-    } else {
-        console.log("Analysing ...");
-    }
+    // let progressBar;
+    // if (!options.ci){
+    //     progressBar = new ProgressBar(' Analysing                [:bar] :percent     Remaining: :etas     Time: :elapseds', {
+    //         complete: '=',
+    //         incomplete: ' ',
+    //         width: 40,
+    //         total: pagesInformations.length+2
+    //     });
+    //     progressBar.tick();
+    // } else {
+    //     console.log("Analysing ...");
+    // }
 
     let asyncFunctions = [];
     let results;
@@ -247,10 +273,11 @@ async function createJsonReports(browser, pagesInformations, options, proxy, hea
     }
 
     //create directory for subresults
-    if (fs.existsSync(SUBRESULTS_DIRECTORY)){
-        fs.rmdirSync(SUBRESULTS_DIRECTORY, { recursive: true });
-    }
-    fs.mkdirSync(SUBRESULTS_DIRECTORY);
+    // if (fs.existsSync(SUBRESULTS_DIRECTORY)){
+    //     fs.rmdirSync(SUBRESULTS_DIRECTORY, { recursive: true });
+    // }
+    // fs.mkdirSync(SUBRESULTS_DIRECTORY);
+
     //Asynchronous analysis with MAX_TAB open simultaneously to json
     for (let i = 0; i < MAX_TAB && index < pagesInformations.length; i++) {
         asyncFunctions.push(analyseURL(browser,pagesInformations[index],{
@@ -276,15 +303,16 @@ async function createJsonReports(browser, pagesInformations, options, proxy, hea
                 headers: headers
             })); // convert is NEEDED, variable size array
         }else{
-            let filePath = path.resolve(SUBRESULTS_DIRECTORY,`${resultId}.json`)
+            // let filePath = path.resolve(SUBRESULTS_DIRECTORY, `-greenit-${resultId}.json`);
+            let filePath = `${SUBRESULTS_DIRECTORY}-greenit-${resultId}.json`;
             writeList.push(fs.promises.writeFile(filePath, JSON.stringify(results)));
-            reports.push({name:`${resultId}`, path: filePath});
+            reports.push({ name: `${resultId}`, path: filePath });
             //console.log(`End of an analysis (${resultId}/${pagesInformations.length}). Results will be saved in ${filePath}`);
-            if (progressBar){
-                progressBar.tick()
-            } else {
+            // if (progressBar) {
+            //     progressBar.tick()
+            // } else {
                 console.log(`${resultId}/${pagesInformations.length}`);
-            }
+            // }
             resultId++;
             if (index == (pagesInformations.length)){
                 asyncFunctions.splice(convert[results.tabId],1); // convert is NEEDED, varialbe size array
@@ -308,11 +336,11 @@ async function createJsonReports(browser, pagesInformations, options, proxy, hea
     //wait for all file to be written
     await Promise.all(writeList);
     //results to xlsx file
-    if (progressBar){
-        progressBar.tick()
-    } else {
+    // if (progressBar){
+    //     progressBar.tick()
+    // } else {
         console.log("Analyse done");
-    }
+    // }
     return reports
 }
 

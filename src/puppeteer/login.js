@@ -1,4 +1,3 @@
-
 /**
  * @file
  * Contains Puppeteer user login functions.
@@ -90,6 +89,8 @@ function hasLoggedIn() {
  * See https://github.com/GoogleChrome/lighthouse-ci/blob/main/docs/configuration.md#puppeteerscript
  *
  * @see setup() in src/lighthousePuppeteerScript.js
+ *
+ * @param {puppeteer.Page} page
  */
 async function ensureLogin(page) {
   if (setting('login')) {

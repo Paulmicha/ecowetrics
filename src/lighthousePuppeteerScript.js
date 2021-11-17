@@ -1,7 +1,9 @@
-
 /**
  * @file
  * Contains puppeteer customizations for lighthouse.
+ *
+ * TODO no way to run actions per page before the tests ?
+ * @see puppeteerBeforeHook() in src/puppeteer/hooks.js
  *
  * See https://dzone.com/articles/lighthouse-ci-with-puppeteer
  * See https://www.puppeteersharp.com/api/PuppeteerSharp.LaunchOptions.html
@@ -26,8 +28,8 @@ async function setup(browser, context) {
   const page = await browser.newPage();
 
   // TODO common puppeteer setup steps ?
+  // @see analyseURL() in src/greenit/cli-core/analysis.js
   await page.setCacheEnabled(true);
-
   if (setting('login')) {
     await ensureLogin(page);
   }

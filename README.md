@@ -44,9 +44,9 @@ input:
   entry:
     url: https://example.com/entry
 
-# TODO wip
+# Keep screenshots along with measures.
 output:
-  screenshots: true
+  screenshot: true
 ```
 
 ## Roadmap

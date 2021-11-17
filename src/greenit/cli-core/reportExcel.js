@@ -1,7 +1,7 @@
 const ExcelJS = require('exceljs');
 const fs = require('fs');
 const path = require('path');
-const ProgressBar = require('progress');
+// const ProgressBar = require('progress');
 
 //create xlsx report for all the analysed pages and recap on the first sheet
 async function create_XLSX_report(reportObject, options){
@@ -15,19 +15,19 @@ async function create_XLSX_report(reportObject, options){
     const globalReport = reportObject.globalReport;
 
     //initialise progress bar
-    let progressBar;
-    if (!options.ci){
-        progressBar = new ProgressBar(' Create Excel report      [:bar] :percent     Remaining: :etas     Time: :elapseds', {
-            complete: '=',
-            incomplete: ' ',
-            width: 40,
-            total: fileList.length+2
-        });
-        progressBar.tick()
-    } else {
+    // let progressBar;
+    // if (!options.ci){
+    //     progressBar = new ProgressBar(' Create Excel report      [:bar] :percent     Remaining: :etas     Time: :elapseds', {
+    //         complete: '=',
+    //         incomplete: ' ',
+    //         width: 40,
+    //         total: fileList.length+2
+    //     });
+    //     progressBar.tick()
+    // } else {
         console.log('Creating XLSX report ...');
-    }
-    
+    // }
+
 
     let wb = new ExcelJS.Workbook();
     //Creating the recap page
@@ -63,10 +63,10 @@ async function create_XLSX_report(reportObject, options){
     globalSheet.getCell("B5").fill = {
         type: 'pattern',
         pattern:'solid',
-        fgColor:{argb: getGradeColor(globalReport_data.grade) } 
+        fgColor:{argb: getGradeColor(globalReport_data.grade) }
     }
 
-    if (progressBar) progressBar.tick()
+    // if (progressBar) progressBar.tick()
 
     //Creating one report sheet per file
     fileList.forEach((file)=>{
@@ -105,9 +105,9 @@ async function create_XLSX_report(reportObject, options){
         sheet.getCell("B2").fill = {
             type: 'pattern',
             pattern:'solid',
-            fgColor:{argb: getGradeColor(obj.grade) } 
+            fgColor:{argb: getGradeColor(obj.grade) }
         }
-        if (progressBar) progressBar.tick()
+        // if (progressBar) progressBar.tick()
     })
     //save report
     try {

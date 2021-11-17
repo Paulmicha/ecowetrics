@@ -16,7 +16,7 @@ module.exports = {
       // See https://github.com/GoogleChrome/lighthouse-ci/blob/main/docs/configuration.md#puppeteerlaunchoptions
       puppeteerScript: './src/lighthousePuppeteerScript.js',
       puppeteerLaunchOptions: {
-        args: setting('puppeteerLaunchOptionsArgs').split(' ')
+        args: setting('puppeteerLaunchOptionsArgs')
       },
       numberOfRuns: 1,
       disableStorageReset: true,
@@ -35,7 +35,7 @@ module.exports = {
       target: 'filesystem',
       outputDir: setting('outputPath'),
       reportFilenamePattern: setting('outputFilenamesPrefix') +
-        '-%%PATHNAME%%-lhci-report.%%EXTENSION%%'
+        '-lhci-%%PATHNAME%%-report.%%EXTENSION%%'
     }
   }
 };

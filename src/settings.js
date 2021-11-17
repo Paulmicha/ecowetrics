@@ -4,8 +4,10 @@
  */
 
 const fs = require('fs');
+const path = require('path');
 const YAML = require('yaml');
 const filenamify = require('filenamify');
+const { dateString, timeString } = require('./utils/date.js');
 
 let memoizedParsedYamlSettings;
 const currentDate = new Date();
@@ -47,15 +49,18 @@ const setting = key => {
       return filenamify(domain);
 
     case 'outputBasePath':
-      return process.env?.OUTPUT_PATH || yamlSettings?.output_path ||
+      return process.env?.OUTPUT_PATH || yamlSettings?.output?.path ||
         './output/' + setting('domain');
 
     // TODO [evol] allow override with or without date-based folder structure ?
     case 'outputPath':
-      return `${setting('outputBasePath')}/${currentDate.getFullYear()}/${currentDate.getMonth() + 1}/${currentDate.getDate()}`;
+      return `${setting('outputBasePath')}/${dateString(currentDate)}`;
 
     case 'outputFilenamesPrefix':
-      return `${currentDate.getHours()}-${currentDate.getMinutes()}-${currentDate.getSeconds()}`;
+      return timeString(currentDate);
+
+    case 'outputPathPrefixed':
+      return path.resolve(setting('outputPath'), setting('outputFilenamesPrefix'));
 
     case 'cookiesPath':
       return process.env?.COOKIES_PATH || yamlSettings?.cookiesPath ||
@@ -64,36 +69,69 @@ const setting = key => {
     case 'device':
       return process.env?.DEVICE || yamlSettings?.device || 'desktop';
 
-    case 'puppeteerLaunchOptionsArgs':
-      return process.env?.P_LAUNCH_OPTIONS || yamlSettings?.puppeteer?.launchOptions?.args ||
-        '--no-sandbox --disable-setuid-sandbox --disable-dev-shm-usage --display';
+    case 'timeout':
+      return process.env?.TIMEOUT || yamlSettings?.timeout || 120000;
 
-    case 'urls':
-    case 'urlsConf':
+    case 'puppeteerLaunchOptionsArgs':
+      const args = process.env?.P_LAUNCH_OPTIONS ||
+        yamlSettings?.puppeteer?.launchOptions?.args ||
+        '--no-sandbox --disable-setuid-sandbox --disable-dev-shm-usage --display';
+      return args.split(' ').map(s => s.trim());
+
+    case 'input':
       if (!yamlSettings?.input) {
         throw "Missing required setting : 'input' (no URLS to test).";
       }
-      const urls = [];
-      const inputConfByUrl = {};
+      return yamlSettings.input;
 
-      Object.keys(yamlSettings.input).forEach(name => {
-        urls.push(yamlSettings.input[name].url);
-        inputConfByUrl[yamlSettings.input[name].url] = yamlSettings.input[name];
+    case 'urls':
+    case 'urlsConf':
+    case 'urlsConfArr':
+    case 'urlsConfByUrl':
+      const inputSettings = setting('input');
+
+      // The 'hooks' entry is reserved to declare operations that must run on
+      // all pages to test. Here, we only want individual pages details, so we
+      // must exclude it.
+      const onlyUrlsSettings = { ...inputSettings };
+      if (onlyUrlsSettings?.hooks) {
+        delete onlyUrlsSettings.hooks;
+      }
+
+      const urls = [];
+      const urlsConfArr = [];
+      const urlsConfByUrl = {};
+
+      Object.keys(onlyUrlsSettings).forEach(name => {
+        urls.push(onlyUrlsSettings[name].url);
+        onlyUrlsSettings[name].name = name;
+        urlsConfArr.push(onlyUrlsSettings[name]);
+        urlsConfByUrl[onlyUrlsSettings[name].url] = onlyUrlsSettings[name];
       });
 
-      return (key === 'urls') ? urls : inputConfByUrl;
+      if (key === 'urls') {
+        return urls;
+      } else if (key === 'urlsConf') {
+        return onlyUrlsSettings;
+      } else if (key === 'urlsConfArr') {
+        return urlsConfArr;
+      }
+      return urlsConfByUrl;
 
     case 'login':
       return yamlSettings?.login;
 
     case 'loginUrl':
-      return yamlSettings?.login?.url || process.env?.LOGIN_URL;
+      return process.env?.LOGIN_URL || yamlSettings?.login?.url;
 
     case 'loginUser':
-      return yamlSettings?.login?.user || process.env?.LOGIN_USER;
+      return process.env?.LOGIN_USER || yamlSettings?.login?.user;
 
     case 'loginPass':
-      return yamlSettings?.login?.pass || process.env?.LOGIN_PASS;
+      return process.env?.LOGIN_PASS || yamlSettings?.login?.pass;
+
+    case 'screenshot':
+      return yamlSettings?.output?.screenshot;
   }
 }
 

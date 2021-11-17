@@ -1,11 +1,13 @@
 const ExcelJS = require('exceljs');
 const fs = require('fs');
 const path = require('path');
-const ProgressBar = require('progress');
-const axios = require('axios')
+// const ProgressBar = require('progress');
+// const axios = require('axios')
+const { setting } = require('../../settings.js');
 
 //Path to the url file
-const SUBRESULTS_DIRECTORY = path.join(__dirname,'../results');
+// const SUBRESULTS_DIRECTORY = path.join(__dirname,'../results');
+const SUBRESULTS_DIRECTORY = setting('outputPathPrefixed');
 
 // keep track of worst pages based on ecoIndex
 function worstPagesHandler(number){
@@ -52,29 +54,29 @@ async function create_global_report(reports,options){
     let handleWorstPages = worstPagesHandler(WORST_PAGES);
 
     //initialise progress bar
-    let progressBar;
-    if (!options.ci){
-        progressBar = new ProgressBar(' Create Global report     [:bar] :percent     Remaining: :etas     Time: :elapseds', {
-            complete: '=',
-            incomplete: ' ',
-            width: 40,
-            total: reports.length+2
-        });
-        progressBar.tick()
-    } else {
+    // let progressBar;
+    // if (!options.ci){
+    //     progressBar = new ProgressBar(' Create Global report     [:bar] :percent     Remaining: :etas     Time: :elapseds', {
+    //         complete: '=',
+    //         incomplete: ' ',
+    //         width: 40,
+    //         total: reports.length+2
+    //     });
+    //     progressBar.tick()
+    // } else {
         console.log('Creating global report ...');
-    }
+    // }
 
     let eco = 0; //future average
     let err = [];
-    let hostname;
+    let hostname = options.domain;
     let worstPages = [];
     let bestPracticesTotal= {};
     let nbBestPracticesToCorrect = 0;
     //Creating one report sheet per file
     reports.forEach((file)=>{
         let obj = JSON.parse(fs.readFileSync(file.path).toString());
-        if (!hostname) hostname = obj.pageInformations.url.split('/')[2]
+        // if (!hostname) hostname = obj.pageInformations.url.split('/')[2]
         obj.nb = parseInt(file.name);
         //handle potential failed analyse
         if (obj.success) {
@@ -93,11 +95,12 @@ async function create_global_report(reports,options){
                 ecoIndex : obj.ecoIndex
             });
         }
-        if (progressBar) progressBar.tick()
+        // if (progressBar) progressBar.tick()
     })
     //Add info the the recap sheet
     //Prepare data
-    const isMobile = (await axios.get('http://ip-api.com/json/?fields=mobile')).data.mobile //get connection type
+    // const isMobile = (await axios.get('http://ip-api.com/json/?fields=mobile')).data.mobile //get connection type
+    const isMobile = (options.device === 'mobile');
     const date = new Date();
     eco = (reports.length-err.length != 0)? Math.round(eco / (reports.length-err.length)) : "No data"; //Average EcoIndex
     let grade = getEcoIndexGrade(eco)
@@ -117,10 +120,10 @@ async function create_global_report(reports,options){
         worstRules : handleWorstRule(bestPracticesTotal,WORST_RULES),
         nbBestPracticesToCorrect : nbBestPracticesToCorrect
     };
-    
-    if (progressBar) progressBar.tick()
+
+    // if (progressBar) progressBar.tick()
     //save report
-    let filePath = path.join(SUBRESULTS_DIRECTORY,"globalReport.json");
+    let filePath = `${SUBRESULTS_DIRECTORY}-greenit-${setting('device')}-report-global.json`;
     try {
         fs.writeFileSync(filePath, JSON.stringify(globalSheet_data))
     } catch (error) {

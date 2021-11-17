@@ -1,8 +1,9 @@
 const fs = require('fs');
 const path = require('path');
-const ProgressBar = require('progress');
+// const ProgressBar = require('progress');
 const TemplateEngine = require('thymeleaf');
-const translator = require('./translator.js').translator;
+const { translator } = require('./translator.js');
+const { setting } = require('../../settings.js');
 
 /**
  * Css class best practices
@@ -14,30 +15,28 @@ const cssBestPractices = {
 }
 
 //create html report for all the analysed pages and recap on the first sheet
-async function create_html_report(reportObject,options){
+async function create_html_report(reportObject, options) {
     //Path of the output file
-    const OUTPUT_FILE = path.resolve(options.report_output_file);
-    if (!OUTPUT_FILE.toLowerCase().endsWith('.html')) {
-        throw ` report_output_file : File "${OUTPUT_FILE}" does not end with the ".html" extension.`
-    }
+    const OUTPUT_FILE = setting('outputPathPrefixed') + '-greenit-' +
+      setting('device') + '-report-global.html';
 
     const fileList = reportObject.reports;
     const globalReport = reportObject.globalReport;
 
     //initialise progress bar
-    let progressBar;
-    if (!options.ci){
-        progressBar = new ProgressBar(' Create HTML report       [:bar] :percent     Remaining: :etas     Time: :elapseds', {
-            complete: '=',
-            incomplete: ' ',
-            width: 40,
-            total: fileList.length+2
-        });
-        progressBar.tick()
-    } else {
+    // let progressBar;
+    // if (!options.ci){
+    //     progressBar = new ProgressBar(' Create HTML report       [:bar] :percent     Remaining: :etas     Time: :elapseds', {
+    //         complete: '=',
+    //         incomplete: ' ',
+    //         width: 40,
+    //         total: fileList.length+2
+    //     });
+    //     progressBar.tick()
+    // } else {
         console.log('Creating HTML report ...');
-    }
-    
+    // }
+
     // Read all reports
     const allReportsVariables = readAllReports(fileList);
 
@@ -45,7 +44,7 @@ async function create_html_report(reportObject,options){
     const globalReportVariables = readGlobalReport(globalReport.path, allReportsVariables);
 
     // write global report
-    const templateEngine = new TemplateEngine.TemplateEngine(); 
+    const templateEngine = new TemplateEngine.TemplateEngine();
     writeGlobalReport(templateEngine, globalReportVariables, OUTPUT_FILE);
 
     // write all reports
@@ -56,10 +55,14 @@ async function create_html_report(reportObject,options){
 function readAllReports(fileList) {
     let allReportsVariables = [];
     let reportVariables = {};
+
     fileList.forEach((file)=>{
         let report_data = JSON.parse(fs.readFileSync(file.path).toString());
         const pageName = report_data.pageInformations.name || report_data.pageInformations.url;
-        const pageFilename = report_data.pageInformations.name ? `${removeForbiddenCharacters(report_data.pageInformations.name)}.html` : `${report_data.tabId}.html`;
+
+        // const pageFilename = report_data.pageInformations.name ? `${removeForbiddenCharacters(report_data.pageInformations.name)}.html` : `${report_data.tabId}.html`;
+        const pageFilename = setting('outputPathPrefixed') + '-greenit-' +
+          setting('device') + '-report-' + report_data.tabId + '.html';
 
         if (report_data.success) {
             let bestPractices = extractBestPractices(report_data.bestPractices);
@@ -162,24 +165,31 @@ function extractBestPractices(bestPracticesFromReport) {
 }
 
 function writeGlobalReport(templateEngine, globalReportVariables, outputFile) {
-    templateEngine.processFile('cli-core/template/global.html', globalReportVariables)
-    .then(globalReportHtml => {
-        fs.writeFileSync(outputFile, globalReportHtml);
-    })
-    .catch(error => {
-        console.log("Error while reading HTML global template : ", error)
-    });
+
+    templateEngine.processFile(
+        path.resolve('./src/greenit/cli-core/template', 'global.html'),
+        globalReportVariables
+    )
+        .then(globalReportHtml => {
+            fs.writeFileSync(outputFile, globalReportHtml);
+        })
+        .catch(error => {
+            console.log("Error while reading HTML global template : ", error)
+        });
 }
 
 function writeAllReports(templateEngine, allReportsVariables, outputFolder) {
     allReportsVariables.forEach(reportVariables => {
-        templateEngine.processFile('cli-core/template/page.html', reportVariables)
-        .then(singleReportHtml => {
-            fs.writeFileSync(`${outputFolder}/${reportVariables.filename}`, singleReportHtml);
-        })
-        .catch(error => {
-            console.log(`Error while reading HTML template ${reportVariables.filename} : `, error)
-        });
+        templateEngine.processFile(
+            path.resolve('./src/greenit/cli-core/template', 'page.html'),
+            reportVariables
+        )
+            .then(singleReportHtml => {
+                fs.writeFileSync(reportVariables.filename, singleReportHtml);
+            })
+            .catch(error => {
+                console.log(`Error while reading HTML template ${reportVariables.filename} : `, error)
+            });
     });
 }
 

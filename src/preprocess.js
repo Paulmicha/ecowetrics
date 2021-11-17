@@ -7,6 +7,6 @@ const fs = require('fs');
 const mkdirp = require('mkdirp');
 const { setting } = require('./settings.js');
 
-if (!fs.existsSync(setting('outputBasePath'))) {
-  mkdirp.sync(setting('outputBasePath'));
+if (!fs.existsSync(setting('outputPath'))) {
+  mkdirp.sync(setting('outputPath'));
 }
