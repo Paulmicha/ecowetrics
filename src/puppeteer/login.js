@@ -99,9 +99,7 @@ async function ensureLogin(page) {
       await doLogin(page);
     } else {
       console.log("load cookies");
-      const cookiesString = fs.readFileSync(setting('cookiesPath'));
-      const cookies = JSON.parse(cookiesString);
-      await page.setCookie(...cookies);
+      await page.setCookie(...JSON.parse(fs.readFileSync(setting('cookiesPath'))));
     }
   }
 }

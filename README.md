@@ -1,10 +1,28 @@
 # Ecowetrics
 
-This is currently just a CLI to get in a single run several front-end indicators from the following tools :
+This is currently just a NodeJS (14-lts) CLI to get in a single run several front-end indicators from the following tools :
 
-- [YellowLabTools](https://github.com/YellowLabTools/YellowLabTools) (License : GPL-2.0)
 - [GreenIT-Analysis](https://github.com/cnumr/GreenIT-Analysis-cli) (License : AGPL-3.0)
 - [LightHouse CI](https://github.com/GoogleChrome/lighthouse-ci) (License : Apache-2.0)
+- [YellowLabTools](https://github.com/YellowLabTools/YellowLabTools) (License : GPL-2.0)
+
+## Usage
+
+Run all tests :
+
+```sh
+npm run all
+```
+
+Run individual tests :
+
+```sh
+npm run greenit
+npm run lhci
+npm run ylt
+```
+
+Results are static files generated in a folder like `./output/www.test.com/2021/11/19` (configurable, see `./src/settings.js`).
 
 ## Settings
 
@@ -49,7 +67,14 @@ output:
   screenshot: true
 ```
 
+## Known issues
+
+Cookies are not working for YellowLabTools due to an issue with Phantomas, see https://github.com/macbre/phantomas/issues/1026
+
 ## Roadmap
 
+- Dockerfile
+- Implement basic HTML templates for YellowLabTools JSON output (instead of running the whole server for quick previews)
+- Cleanup the GreenIT code roughly adapted from the `cnumr/GreenIT-Analysis-cli` repo
 - Implement minimal, "static" UI to track changes over time (json ? sqlite ?)
 - Integration example with [Scaphandre](https://github.com/hubblo-org/scaphandre) (License : Apache-2.0) for server-side indicators - i.e. working docker-compose proof of concept

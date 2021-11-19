@@ -14,6 +14,7 @@ const { setting } = require('./settings.js');
 let lhCollectSettings = {
   // Don't clear localStorage/IndexedDB/etc before loading the page.
   "disableStorageReset": true,
+  "maxWaitForFcp": setting('timeout'),
   "maxWaitForLoad": setting('timeout'),
   // Use applied throttling instead of simulated throttling.
   "throttlingMethod": "devtools"
@@ -22,8 +23,8 @@ let lhCollectSettings = {
 if (setting('device') === 'desktop') {
   lhCollectSettings = {
     ...lhCollectSettings,
-    maxWaitForFcp: 15 * 1000,
-    maxWaitForLoad: 35 * 1000,
+    // maxWaitForFcp: 15 * 1000,
+    // maxWaitForLoad: 35 * 1000,
     formFactor: 'desktop',
     // See ./node_modules/lighthouse/lighthouse-core/config/constants.js
     // throttling: constants.throttling.desktopDense4G,

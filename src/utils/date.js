@@ -8,7 +8,7 @@ const pad = n => n < 10 ? '0' + n : n;
 const dateString = (d, sep = '/') => [
     d.getFullYear(),
     pad(d.getMonth() + 1),
-    pad(d.getUTCDate())
+    pad(d.getDate())
   ].join(sep);
 
 const timeString = (d, sep = '-') => [
