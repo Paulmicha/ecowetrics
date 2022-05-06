@@ -8,6 +8,31 @@ This is currently just a NodeJS (14-lts) CLI to get in a single run several fron
 
 ## Usage
 
+### Using Docker
+
+Create the image & build the container & install NPM depedencies :
+
+```sh
+docker build -t paulmicha/ecowetrics:0.1 .
+docker run -v $(pwd):/app paulmicha/ecowetrics:0.1 npm i
+```
+
+Run all tests :
+
+```sh
+docker run -v $(pwd):/app paulmicha/ecowetrics:0.1 npm run all
+```
+
+Run individual tests :
+
+```sh
+docker run -v $(pwd):/app paulmicha/ecowetrics:0.1 npm run greenit
+docker run -v $(pwd):/app paulmicha/ecowetrics:0.1 npm run lhci
+docker run -v $(pwd):/app paulmicha/ecowetrics:0.1 npm run ylt
+```
+
+### Using local Node installation
+
 Run all tests :
 
 ```sh
@@ -21,6 +46,7 @@ npm run greenit
 npm run lhci
 npm run ylt
 ```
+### Output (results)
 
 Results are static files generated in a folder like `./output/www.test.com/2021/11/19` (configurable, see `./src/settings.js`).
 

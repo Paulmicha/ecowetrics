@@ -6,8 +6,5 @@ node_modules/
 /settings.yml
 /.env
 
-# TODO wip
-/Dockerfile
-
 # Debug
 /debug.js
